@@ -12,7 +12,7 @@ def parsing():
 	parser.add_argument('-tgt', '--targfile', default='scraperesults.txt', 
 						type=str, help='File to write scraped data to?')
 	parser.add_argument('-url', '--website', type=str, help='Sport page URL?',
-						default='http://www.asapsports.com/showcat.php?id=5')
+						default='http://www.asapsports.com/showcat.php?id=11')
 	return parser.parse_args()
 
 def is_answer_start(s):
@@ -78,10 +78,11 @@ def parse_interview(url):
 
 	named_answers = []
 	for i, answer in enumerate(joined_answers):
-		person, statement = answer.split(':',1)
-		person = clean_string(person)
-		statement = clean_string(statement).split()
-		named_answers.append((person, statement))
+		# print(answer)
+		# person, statement = answer.split(':',1)
+		# person = clean_string(person)
+		# statement = clean_string(statement).split()
+		named_answers.append((answer))
 
 	global COUNT
 	COUNT += 1
@@ -118,11 +119,11 @@ def parse_events_page(url):
 
 def parse_year_page(url):
 	'''
-	Parameters: url of page with year's hockey events
+	Parameters: url of page with year's basketball events
 	Returns:	tuple of team names and url of stanley cup page, if they exist
 	'''
 	def scf_in_text(tag):
-		return tag.name == 'a' and 'NHL STANLEY CUP FINAL' in tag.get_text()
+		return tag.name == 'a' and 'NBA FINAL' in tag.get_text()
 	page = requests.get(url)
 	soup = BeautifulSoup(page.text, 'html.parser')
 	link = soup.find(scf_in_text)
@@ -136,7 +137,7 @@ def parse_year_page(url):
 
 def parse_sport_page(url):
 	'''
-	Parameters: url of hockey page
+	Parameters: url of basketball page
 	Returns:	list of urls for each year page
 	'''
 	page = requests.get(url)
@@ -163,7 +164,7 @@ def get_data(url):
 	for (year, teams), url in tqdm(year_urls.items()):
 		interviews_yearly = parse_events_page(url)
 		for date, named_answers in interviews_yearly:
-			all_interviews.append((teams, date, named_answers))
+			all_interviews.append([teams, date, named_answers])
 	return all_interviews
 
 def save_data(all_interviews, target_file):
@@ -172,18 +173,34 @@ def save_data(all_interviews, target_file):
 	Returns: none, but saves data in html format to target_file
 	'''
 	f = open(target_file, 'w+')
-	for (team1, team2), date, named_answers in all_interviews:
-		f.write('<entry>')
-		f.write('<team1>'+team1+'</team1>')
-		f.write('<team2>'+team2+'</team2>')
-		f.write('<date>'+date+'</date>')
-		for person, text in named_answers:
-			f.write('<answer>')
-			f.write('<name>'+person+'</name>')
-			f.write('<text>'+' '.join(text)+'</text>')
-			f.write('</answer>')
-		f.write('</entry>')
+	f.write('/n'.join(str(v) for v in all_interviews))
 	f.close()
+	# i=0
+	# for teams, date, named_answers in all_interviews:
+	# 	f.write('<entry>')
+	# 	f.write('<team>')
+	# 	f.write(teams[i])
+	# 	f.write('</team>')
+	# 	f.write('<date>')
+	# 	f.write(date[i])
+	# 	f.write('</date>')
+	# 	f.write('<named_answers>')
+	# 	f.write(named_answers[i])
+	# 	f.write('</named_answers>')
+	# 	f.write('</entry>')
+	# 	i+=1
+	# for (team1,), date, named_answers in all_interviews:
+	# 	f.write('<entry>')
+	# 	f.write('<team1>'+team1+'</team1>')
+	# 	# f.write('<team2>'+team2+'</team2>')
+	# 	f.write('<date>'+date+'</date>')
+	# 	for item in named_answers:
+	# 		f.write('<answer>')
+	# 		# f.write('<name>'+person+'</name>')
+	# 		f.write('<text>'+' '.join(item)+'</text>')
+	# 		f.write('</answer>')
+	# 	f.write('</entry>')
+	# f.close()
 
 if __name__ == "__main__":
 	args = parsing()
